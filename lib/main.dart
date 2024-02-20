@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'helper.dart';
-//TODO: Passo 2 - Importe o pacote rflutter_alert aqui.
+import 'package:rflutter_alert/rflutter_alert.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 Helper helper = Helper();
 
@@ -28,32 +29,62 @@ class QuizPage extends StatefulWidget {
 }
 
 class _QuizPageState extends State<QuizPage> {
+  int respostasCertas = 0;
   List<Icon> marcadorDePontos = [];
 
   void conferirResposta(bool respostaSelecionadaPeloUsuario) {
-    bool respostaCerta = helper.obterRespostaCorreta();
-
+    final player = AudioPlayer();
+    bool? respostaCerta = helper.obterRespostaCorreta();
     setState(() {
-      //TODO: Passo 4 - Use o IF/ELSE para verificar se chegou-se ao fim do quiz. Se isso for verdadeiro (true), siga os passos: 4.a, 4.b, 4.c e 4.d
-      //TODO: Passo 4.a) - Mostre um alerta utilizando o pacote rflutter_alert (se ficar em dúvida dê uma olhada na documentação do pacote: https://pub.dev/packages/rflutter_alert).
-      //TODO: Passo 4.c) - Reinicie o valor da propriedade _numeroDaQuestaoAtual.
-      //TODO: Passo 4.d) - Esvazie a lista marcadorDePontos para uma nova rodada.
-
-      //TODO: Passo 5 - 'Se' não for o fim da execução do app ainda, ou seja, se não estivermos na última questão, entre na estrutura condicional e continue com a verificação da resposta.
-      if (respostaSelecionadaPeloUsuario == respostaCerta) {
+      if (helper.confereFimDaExecucao() == true) {
+        if (respostaSelecionadaPeloUsuario == respostaCerta) {
+          player.play(AssetSource('acertou-mizeravijk.mp3'));
+          marcadorDePontos.add(Icon(
+            Icons.check,
+            color: Colors.green,
+          ));
+        }
+        else {
+          player.play(AssetSource('faustao-errou.mp3'));
+          marcadorDePontos.add(Icon(
+            Icons.close,
+            color: Colors.red,
+          ));
+        };
+        int n = helper.obterNumeroQuestoes();
+        Alert(
+          context: context,
+          type: AlertType.none,
+          title: "Fim do quiz!",
+          desc: "Você respondeu todas as perguntas. Seu resultado foi $respostasCertas respostas certas de $n questões.",
+          buttons: [
+            DialogButton(
+              child: Text(
+                "Show!",
+                style: TextStyle(color: Colors.white, fontSize: 20),
+              ),
+              onPressed: () => Navigator.pop(context),
+              width: 120,
+            )
+          ],
+        ).show();
+        helper.resetarQuestoes();
+        marcadorDePontos.clear();
+      } else if (respostaSelecionadaPeloUsuario == respostaCerta) {
+        respostasCertas++;
+        player.play(AssetSource('acertou-mizeravijk.mp3'));
         marcadorDePontos.add(Icon(
           Icons.check,
           color: Colors.green,
         ));
-      } else {
+        }
+      else {
+        player.play(AssetSource('faustao-errou.mp3'));
         marcadorDePontos.add(Icon(
-          Icons.close,
-          color: Colors.red,
+        Icons.close,
+        color: Colors.red,
         ));
-      }
-
-      //Usuário pressiona o botão verdadeiro.
-
+      };
       helper.proximaPergunta();
     });
   }
@@ -70,7 +101,7 @@ class _QuizPageState extends State<QuizPage> {
             padding: EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                helper.obterQuestao(),
+                helper.obterQuestao() ?? "Questão não encontrada.",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 25.0,
@@ -82,9 +113,10 @@ class _QuizPageState extends State<QuizPage> {
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(15.0),
-            child: FlatButton(
-              textColor: Colors.white,
-              color: Colors.deepPurple,
+            child: ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.deepPurple),
+              ),
               child: Text(
                 'Verdadeiro',
                 style: TextStyle(
@@ -103,8 +135,10 @@ class _QuizPageState extends State<QuizPage> {
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(15.0),
-            child: FlatButton(
-              color: Colors.grey.shade800,
+            child: ElevatedButton(
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all<Color>(Colors.grey.shade800),
+              ),
               child: Text(
                 'Falso',
                 style: TextStyle(
